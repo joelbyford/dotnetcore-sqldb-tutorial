@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using DotNetCoreSqlDb.Models;
+using Azure.Identity;
 
 namespace DotNetCoreSqlDb
 {
@@ -28,8 +29,16 @@ namespace DotNetCoreSqlDb
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+            //services.AddDbContext<MyDatabaseContext>(options =>
+            //        options.UseSqlite("Data Source=localdatabase.db"));
+            var connString = Configuration.GetConnectionString("MyDbConnection");
+            var sqlConn = new System.Data.SqlClient.SqlConnection(connString);
+            var credential = new DefaultAzureCredential();
+            var token = credential.GetToken(new Azure.Core.TokenRequestContext(new[] {"https://database.windows.net/.default"}));
+            sqlConn.AccessToken = token.Token;
+
             services.AddDbContext<MyDatabaseContext>(options =>
-                    options.UseSqlite("Data Source=localdatabase.db"));
+                options.UseSqlServer(sqlConn));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
